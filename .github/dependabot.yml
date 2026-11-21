@@ -26,6 +26,10 @@ updates:
         update-types: [version-update:semver-major]
       - dependency-name: 'Microsoft.EntityFrameworkCore*'
         update-types: [version-update:semver-major]
+      # The EF tooling major has to track the EF Core major whose migrations
+      # it generates, so it moves with the framework rather than on its own.
+      - dependency-name: 'dotnet-ef'
+        update-types: [version-update:semver-major]
 
   - package-ecosystem: npm
     directory: /services/node-worker
@@ -38,6 +42,19 @@ updates:
         dependency-type: production
       development:
         dependency-type: development
+    ignore:
+      # @types/node describes the runtime, so its major has to track the Node
+      # major in the Dockerfile and in "engines" - not run ahead of it. A
+      # bump here alone would type-check against APIs the container does not
+      # have.
+      - dependency-name: '@types/node'
+        update-types: [version-update:semver-major]
+
+      # TypeScript is deliberately held on 5.x: typescript-eslint's
+      # type-aware rules are the reason eslint.config.js exists, and they do
+      # not support the 7.x compiler yet. Revisit together, as one change.
+      - dependency-name: 'typescript'
+        update-types: [version-update:semver-major]
 
   - package-ecosystem: uv
     directory: /services/python-worker
@@ -70,3 +87,41 @@ updates:
     schedule:
       interval: weekly
       day: monday
+    # A base image tag is not just a dependency here - it pins the language
+    # runtime that the rest of the repo is configured against. Crossing a
+    # runtime version is a migration that has to move several files at once,
+    # so Dependabot does not propose it.
+    #
+    # Nothing is lost by this. Every tag below is a FLOATING tag: upstream
+    # rebuilds `10.0`, `22-bookworm-slim` and `3.13-slim-bookworm` in place
+    # with security patches, so those arrive on the next `docker build` with
+    # no pull request involved. The only thing Dependabot can offer here is a
+    # move to a new runtime version, which is exactly what should not arrive
+    # unannounced.
+    ignore:
+      # Dependabot strips the registry prefix, so the name is `dotnet/sdk`,
+      # NOT `mcr.microsoft.com/dotnet/sdk`. The glob covers sdk, aspnet and
+      # runtime.
+      #
+      # global.json pins SDK 10.0.404 with rollForward: latestFeature, which
+      # matches feature band and patch WITHIN the same major.minor and cannot
+      # cross to 11. An sdk:11.0 image therefore contains no usable SDK, and
+      # restore fails before anything compiles. Moving this means moving
+      # global.json and TargetFramework in Directory.Build.props together.
+      - dependency-name: 'dotnet/*'
+        update-types: [version-update:semver-major]
+
+      # node and python are ignored outright rather than by update-type.
+      # Dependabot cannot read `26-bookworm-slim` or `3.15-slim-bookworm` as
+      # semver, so it emits those updates with NO update-type field at all,
+      # and an `update-types` filter silently never matches them. Verified
+      # against the metadata on the pull requests it actually opened.
+      #
+      # node: package.json "engines" and the pinned @types/node describe
+      # Node 22, so bumping the image alone would leave the type definitions
+      # describing an older runtime than the container runs.
+      - dependency-name: 'node'
+
+      # python: the minor version is also encoded in requires-python, ruff's
+      # target-version, mypy's python_version and the resolved uv.lock.
+      - dependency-name: 'python'
