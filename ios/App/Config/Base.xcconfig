@@ -1,0 +1,27 @@
+// ---------------------------------------------------------------------------
+// Settings shared by every configuration.
+//
+// Build settings live in .xcconfig files rather than in the Xcode UI so that
+// they are reviewable in a diff, mergeable, and identical on CI. The
+// generated .xcodeproj is disposable (see project.yml) and is not committed.
+// ---------------------------------------------------------------------------
+
+PRODUCT_NAME = Atlas
+CURRENT_PROJECT_VERSION = 1
+MARKETING_VERSION = 0.1.0
+
+IPHONEOS_DEPLOYMENT_TARGET = 18.0
+TARGETED_DEVICE_FAMILY = 1,2
+SWIFT_VERSION = 6.0
+
+// Treat warnings as errors everywhere. A warning nobody fixes is a warning
+// everybody learns to ignore.
+SWIFT_TREAT_WARNINGS_AS_ERRORS = YES
+GCC_TREAT_WARNINGS_AS_ERRORS = YES
+SWIFT_STRICT_CONCURRENCY = complete
+
+CODE_SIGN_STYLE = Automatic
+ENABLE_USER_SCRIPT_SANDBOXING = YES
+
+// No secrets in here. API_BASE_URL is a public endpoint; tokens and keys are
+// fetched at runtime or stored in the Keychain. See docs/security/secrets.md.

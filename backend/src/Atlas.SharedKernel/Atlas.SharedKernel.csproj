@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The domain kernel. Deliberately has ZERO dependencies - not even
+       ASP.NET Core - so that domain logic in any module stays testable in
+       isolation and cannot acquire a transport or persistence concern by
+       accident. The architecture tests enforce this. -->
+
+  <PropertyGroup>
+    <RootNamespace>Atlas.SharedKernel</RootNamespace>
+  </PropertyGroup>
+
+</Project>

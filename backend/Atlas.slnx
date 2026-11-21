@@ -1,0 +1,16 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Atlas.Api/Atlas.Api.csproj" />
+    <Project Path="src/Atlas.DbMigrator/Atlas.DbMigrator.csproj" />
+    <Project Path="src/Atlas.ServiceDefaults/Atlas.ServiceDefaults.csproj" />
+    <Project Path="src/Atlas.SharedKernel/Atlas.SharedKernel.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/">
+    <Project Path="src/Modules/Atlas.Modules.Identity/Atlas.Modules.Identity.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Atlas.Api.IntegrationTests/Atlas.Api.IntegrationTests.csproj" />
+    <Project Path="tests/Atlas.Architecture.Tests/Atlas.Architecture.Tests.csproj" />
+    <Project Path="tests/Atlas.Modules.Identity.Tests/Atlas.Modules.Identity.Tests.csproj" />
+  </Folder>
+</Solution>

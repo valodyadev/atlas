@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# `labels` rather than the deprecated `commonLabels`. includeSelectors is
+# false on purpose: baking an extra label into a Deployment's selector makes
+# it immutable-in-place and forces a delete/recreate to ever change it.
+labels:
+  - includeSelectors: false
+    pairs:
+      app.kubernetes.io/part-of: atlas
+
+resources:
+  - api-deployment.yaml
+  - api-service.yaml
+  - db-migrator-job.yaml

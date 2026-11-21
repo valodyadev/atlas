@@ -1,0 +1,11 @@
+# Without a PDB, a node drain can evict every replica at once and take the
+# service down during routine cluster maintenance.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: atlas-api
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: atlas-api

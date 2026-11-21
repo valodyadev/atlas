@@ -1,0 +1,72 @@
+version: 2
+
+# Grouped, weekly updates. Ungrouped daily updates produce so many pull
+# requests that the team stops reading them, which is strictly worse than
+# updating monthly on purpose.
+updates:
+  - package-ecosystem: nuget
+    directory: /backend
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      microsoft:
+        patterns: ['Microsoft.*', 'System.*']
+        update-types: [minor, patch]
+      opentelemetry:
+        patterns: ['OpenTelemetry*']
+      test-tooling:
+        patterns: ['xunit*', 'Shouldly', 'NSubstitute', 'Testcontainers*', 'NetArchTest*']
+    ignore:
+      # The framework version is tied to TargetFramework in
+      # Directory.Build.props; moving it is a deliberate migration, not a
+      # dependency bump.
+      - dependency-name: 'Microsoft.AspNetCore.*'
+        update-types: [version-update:semver-major]
+      - dependency-name: 'Microsoft.EntityFrameworkCore*'
+        update-types: [version-update:semver-major]
+
+  - package-ecosystem: npm
+    directory: /services/node-worker
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      production:
+        dependency-type: production
+      development:
+        dependency-type: development
+
+  - package-ecosystem: uv
+    directory: /services/python-worker
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: swift
+    directory: /ios/Packages/AtlasKit
+    schedule:
+      interval: weekly
+      day: monday
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      actions:
+        patterns: ['*']
+
+  - package-ecosystem: docker
+    directories:
+      - /backend/src/Atlas.Api
+      - /backend/src/Atlas.DbMigrator
+      - /services/node-worker
+      - /services/python-worker
+    schedule:
+      interval: weekly
+      day: monday

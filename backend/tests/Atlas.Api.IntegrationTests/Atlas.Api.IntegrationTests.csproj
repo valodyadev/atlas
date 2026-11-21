@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Integration tests run the real API host against a real PostgreSQL in a
+       throwaway container, with the real migrations applied. No in-memory
+       provider: it has different transaction, concurrency and SQL semantics
+       than Postgres, so tests that pass against it prove very little.
+
+       These tests skip themselves (rather than fail) when no container
+       runtime is present, so `make test` still works on a machine without
+       Docker. CI always has one, so the coverage is never silently lost. -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/Atlas.Api/Atlas.Api.csproj" />
+    <ProjectReference Include="../../src/Modules/Atlas.Modules.Identity/Atlas.Modules.Identity.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3.mtp-v2" />
+    <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
+    <PackageReference Include="Shouldly" />
+  </ItemGroup>
+
+</Project>

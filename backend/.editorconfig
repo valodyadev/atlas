@@ -1,0 +1,54 @@
+# Backend-specific analyzer and code-style severities.
+# Formatting rules are inherited from the repository-root .editorconfig.
+
+[*.cs]
+# --- usings / namespaces ---
+csharp_using_directive_placement = outside_namespace:warning
+csharp_style_namespace_declarations = file_scoped:warning
+dotnet_diagnostic.IDE0005.severity = warning   # unnecessary using
+
+# --- modern language features ---
+csharp_style_var_for_built_in_types = false:suggestion
+csharp_prefer_braces = true:warning
+csharp_style_prefer_primary_constructors = true:suggestion
+dotnet_style_prefer_collection_expression = true:suggestion
+
+# --- correctness we care about enough to fail the build on ---
+dotnet_diagnostic.CA2007.severity = none       # ConfigureAwait: not needed in ASP.NET Core
+dotnet_diagnostic.CA1848.severity = none       # LoggerMessage source generator: see note below
+dotnet_diagnostic.CA1873.severity = none       # boxed logging arguments: see note below
+# CA1848/CA1873 both push every log call through a [LoggerMessage] partial
+# method. That is the right move on a hot request path and worth adopting
+# per-module as throughput demands it, but mandating it repo-wide from day
+# one buys microseconds at the cost of readability in startup and job code.
+dotnet_diagnostic.CA1515.severity = none       # internal-by-default: hosts expose public types
+dotnet_diagnostic.CA1812.severity = none       # DI-instantiated types look uninstantiated
+
+# Two framework-design rules predate the idioms this codebase uses on purpose.
+# Both are disabled deliberately rather than suppressed case-by-case:
+dotnet_diagnostic.CA1000.severity = none       # static factories on generic types: Result<T>.Success(...) is the idiom
+dotnet_diagnostic.CA1716.severity = none       # keyword clashes only matter for VB interop, which we do not support
+
+# --- naming: interfaces must start with I, async methods end with Async ---
+dotnet_naming_rule.interfaces_start_with_i.severity = warning
+dotnet_naming_rule.interfaces_start_with_i.symbols = interface_symbol
+dotnet_naming_rule.interfaces_start_with_i.style = prefix_i_style
+dotnet_naming_symbols.interface_symbol.applicable_kinds = interface
+dotnet_naming_style.prefix_i_style.required_prefix = I
+dotnet_naming_style.prefix_i_style.capitalization = pascal_case
+
+[tests/**/*.cs]
+# Test method names read better as sentences, and test classes are instantiated
+# by the framework rather than by our code.
+dotnet_diagnostic.CA1707.severity = none       # underscores in member names
+dotnet_diagnostic.CA1861.severity = none       # constant arrays as arguments
+dotnet_diagnostic.CA1711.severity = none       # xUnit's collection-fixture naming convention
+
+# EF Core writes migrations; we do not hand-edit them and we do not hold them
+# to our style rules. Marking them generated is the supported way to opt a
+# whole directory out of analysis without littering #pragma directives.
+[**/Migrations/*.cs]
+generated_code = true
+dotnet_analyzer_diagnostic.severity = none
+dotnet_diagnostic.IDE0005.severity = none
+dotnet_diagnostic.IDE0161.severity = none

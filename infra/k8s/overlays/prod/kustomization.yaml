@@ -1,0 +1,45 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: atlas
+nameSuffix: -prod
+
+resources:
+  - ../../base
+  - pod-disruption-budget.yaml
+  - horizontal-pod-autoscaler.yaml
+
+configMapGenerator:
+  - name: atlas-api-config
+    literals:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - Logging__LogLevel__Default=Information
+      # Auth is mandatory outside Development; the API refuses to start
+      # otherwise. Authority and Audience come from the Secret.
+      - Auth__Enabled=true
+      - RateLimit__PermitLimit=300
+
+patches:
+  - target:
+      kind: Deployment
+      name: atlas-api
+    patch: |
+      - op: replace
+        path: /spec/replicas
+        value: 3
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/cpu
+        value: 500m
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/memory
+        value: 512Mi
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/memory
+        value: 1Gi
+
+images:
+  # CI replaces these with immutable digests at deploy time.
+  - name: ghcr.io/valodyadev/atlas-api
+    newTag: PLACEHOLDER
+  - name: ghcr.io/valodyadev/atlas-db-migrator
+    newTag: PLACEHOLDER

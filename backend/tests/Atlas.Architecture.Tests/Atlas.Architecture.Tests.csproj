@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Executable architecture rules. These are the only thing that keeps
+       module boundaries real once the team is larger than the person who drew
+       the diagram: a violating reference fails CI instead of being noticed in
+       review six months later. -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/Atlas.Api/Atlas.Api.csproj" />
+    <ProjectReference Include="../../src/Atlas.SharedKernel/Atlas.SharedKernel.csproj" />
+    <ProjectReference Include="../../src/Atlas.ServiceDefaults/Atlas.ServiceDefaults.csproj" />
+    <ProjectReference Include="../../src/Modules/Atlas.Modules.Identity/Atlas.Modules.Identity.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3.mtp-v2" />
+    <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" />
+    <PackageReference Include="NetArchTest.Rules" />
+    <PackageReference Include="Shouldly" />
+  </ItemGroup>
+
+</Project>

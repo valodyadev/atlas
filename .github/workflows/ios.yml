@@ -1,0 +1,107 @@
+name: iOS
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ios/**'
+      - '.github/workflows/ios.yml'
+  pull_request:
+    paths:
+      - 'ios/**'
+      - '.github/workflows/ios.yml'
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # Fast gate: the shared packages build and test on a plain Swift toolchain
+  # with no Xcode project, no simulator and no code signing. This is where
+  # almost all of the iOS test coverage lives, and it finishes in under two
+  # minutes.
+  packages:
+    runs-on: macos-15
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: ios/Packages/AtlasKit
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_16.4.app
+
+      - uses: actions/cache@v4
+        with:
+          path: ios/Packages/AtlasKit/.build
+          key: spm-${{ runner.os }}-${{ hashFiles('ios/Packages/AtlasKit/Package.swift') }}
+          restore-keys: spm-${{ runner.os }}-
+
+      # Warnings are errors: a warning nobody fixes is a warning everybody
+      # learns to scroll past.
+      - name: Build
+        run: swift build -Xswiftc -warnings-as-errors
+
+      - name: Test
+        run: swift test -Xswiftc -warnings-as-errors
+
+  lint:
+    runs-on: macos-15
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: ios
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install tools
+        run: brew install swiftformat swiftlint xcodegen
+
+      - name: Check formatting
+        run: swiftformat --lint .
+
+      - name: Lint
+        run: swiftlint lint --strict
+
+  # Slower gate: generate the Xcode project and build the app itself for the
+  # simulator. Catches anything that only breaks inside a real app target -
+  # Info.plist substitution, asset catalogs, build settings.
+  app:
+    runs-on: macos-15
+    timeout-minutes: 40
+    defaults:
+      run:
+        working-directory: ios
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_16.4.app
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      # The .xcodeproj is generated, never committed - see ios/project.yml.
+      - name: Generate the Xcode project
+        run: xcodegen generate
+
+      - name: Install xcbeautify
+        run: brew install xcbeautify
+
+      - name: Build for the simulator
+        run: |
+          set -o pipefail
+          xcodebuild build-for-testing \
+            -project Atlas.xcodeproj \
+            -scheme Atlas \
+            -configuration Debug \
+            -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest' \
+            CODE_SIGNING_ALLOWED=NO \
+            | xcbeautify --renderer github-actions

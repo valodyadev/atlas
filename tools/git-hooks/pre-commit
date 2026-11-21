@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+# ---------------------------------------------------------------------------
+# Pre-commit hook. Enable with: make install-hooks
+#
+# Fast checks only. A hook that takes thirty seconds is a hook people bypass
+# with --no-verify, so the full suite stays in CI and this catches just the
+# two things that are genuinely painful to undo: committed secrets and
+# unformatted code.
+# ---------------------------------------------------------------------------
+set -uo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+cd "${REPO_ROOT}"
+
+staged="$(git diff --cached --name-only --diff-filter=ACM)"
+[ -z "${staged}" ] && exit 0
+
+fail=0
+
+# --- 1. Files that must never be committed --------------------------------
+while IFS= read -r file; do
+  case "${file}" in
+    .env|.env.*|*.pem|*.p12|*.mobileprovision|*/appsettings.Local.json)
+      if [ "${file}" != ".env.example" ]; then
+        echo "error: ${file} must not be committed."
+        fail=1
+      fi
+      ;;
+  esac
+done <<< "${staged}"
+
+# --- 2. Obvious secrets in the diff ---------------------------------------
+# Low-recall on purpose: gitleaks in CI does the thorough pass. This catches
+# the paste-a-key-into-a-config mistake before it enters history, where it is
+# compromised forever regardless of any later fix.
+secret_pattern='(aws_secret_access_key|AKIA[0-9A-Z]{16}|-----BEGIN [A-Z ]*PRIVATE KEY-----|ghp_[A-Za-z0-9]{36}|xox[baprs]-[A-Za-z0-9-]{10,})'
+if git diff --cached -U0 | grep -nEi "${secret_pattern}" >/dev/null 2>&1; then
+  echo "error: the staged diff looks like it contains a credential:"
+  git diff --cached -U0 | grep -nEi "${secret_pattern}" | head -5
+  echo "       If this is a false positive, commit with --no-verify and say so in the message."
+  fail=1
+fi
+
+# --- 3. Formatting, per language, only for staged files -------------------
+if echo "${staged}" | grep -q '^ios/.*\.swift$'; then
+  if command -v swiftformat >/dev/null 2>&1; then
+    if ! (cd ios && swiftformat --lint . >/dev/null 2>&1); then
+      echo "error: Swift formatting issues. Run: make format"
+      fail=1
+    fi
+  fi
+fi
+
+if echo "${staged}" | grep -q '^backend/.*\.cs$'; then
+  if command -v dotnet >/dev/null 2>&1 || [ -d /opt/homebrew/opt/dotnet@10/bin ]; then
+    PATH="/opt/homebrew/opt/dotnet@10/bin:${PATH}"
+    if ! (cd backend && dotnet format --verify-no-changes --no-restore >/dev/null 2>&1); then
+      echo "error: C# formatting issues. Run: make format"
+      fail=1
+    fi
+  fi
+fi
+
+if [ "${fail}" -ne 0 ]; then
+  echo
+  echo "Pre-commit checks failed. Fix the above, or bypass with --no-verify."
+  exit 1
+fi
+
+exit 0

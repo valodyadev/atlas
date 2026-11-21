@@ -1,0 +1,98 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: atlas-api
+  labels:
+    app.kubernetes.io/name: atlas-api
+    app.kubernetes.io/component: api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: atlas-api
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0        # never reduce capacity during a deploy
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: atlas-api
+        app.kubernetes.io/component: api
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      # Long enough for in-flight requests to finish after the pod leaves the
+      # load balancer. Too short and every deploy drops a few requests.
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: api
+          # Set by CI to an immutable digest. Never :latest.
+          image: ghcr.io/valodyadev/atlas-api:PLACEHOLDER
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: ASPNETCORE_HTTP_PORTS
+              value: "8080"
+            - name: OTEL_SERVICE_NAME
+              value: atlas-api
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: http://opentelemetry-collector.observability:4317
+          envFrom:
+            - configMapRef:
+                name: atlas-api-config
+            # Created by your secret manager's operator; never committed.
+            - secretRef:
+                name: atlas-api-secrets
+          # Liveness: process only. A failing liveness probe RESTARTS the pod,
+          # so it must never depend on the database - otherwise a brief
+          # database blip restarts the entire fleet at once.
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 3
+          # Readiness: includes dependencies. A failing readiness probe only
+          # removes the pod from the load balancer, which is what you want.
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3
+          # Startup probe gives a slow cold start room without having to relax
+          # the liveness thresholds for the whole pod lifetime.
+          startupProbe:
+            httpGet:
+              path: /health/live
+              port: http
+            periodSeconds: 3
+            failureThreshold: 20
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              # No CPU limit on purpose: a CPU limit throttles latency-sensitive
+              # work even when the node is idle. Memory IS limited, because
+              # memory cannot be throttled - it gets OOM-killed.
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}

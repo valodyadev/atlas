@@ -1,0 +1,122 @@
+# ---------------------------------------------------------------------------
+# Local development stack.
+#
+#     make up          # start dependencies + services
+#     make down        # stop, keeping data
+#     make nuke        # stop and delete volumes
+#
+# Only the backing services are required to develop; the API and workers are
+# usually run from your IDE for debugging. Start just the dependencies with:
+#     docker compose -f infra/docker/compose.yaml up -d postgres otel-collector
+# ---------------------------------------------------------------------------
+name: atlas
+
+services:
+  # --- Backing services ----------------------------------------------------
+  postgres:
+    # Pinned, and must match PostgresFixture.PostgresImage in the integration
+    # tests - otherwise tests stop telling you anything about production.
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-atlas}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-local-dev-only}
+      POSTGRES_DB: ${POSTGRES_DB:-atlas}
+      # Deterministic collation and encoding, so a local database sorts and
+      # compares exactly like the deployed one.
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-atlas} -d ${POSTGRES_DB:-atlas}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.145.0
+    restart: unless-stopped
+    command: ["--config=/etc/otel/config.yaml"]
+    volumes:
+      - ../observability/otel-collector.yaml:/etc/otel/config.yaml:ro
+    ports:
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+
+  # Traces, logs and metrics in one UI with no storage to configure. Swap for
+  # your real backend (Grafana/Tempo, Honeycomb, Datadog) by changing the
+  # collector's exporters - no application change.
+  jaeger:
+    image: jaegertracing/jaeger:2.14.0
+    restart: unless-stopped
+    ports:
+      - "16686:16686"  # UI
+
+  # --- Application ---------------------------------------------------------
+  # Runs migrations to completion, then exits. The API waits for it.
+  db-migrator:
+    build:
+      context: ../..
+      dockerfile: backend/src/Atlas.DbMigrator/Dockerfile
+    environment:
+      DOTNET_ENVIRONMENT: Development
+      ConnectionStrings__Default: >-
+        Host=postgres;Port=5432;Database=${POSTGRES_DB:-atlas};Username=${POSTGRES_USER:-atlas};Password=${POSTGRES_PASSWORD:-local-dev-only}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    build:
+      context: ../..
+      dockerfile: backend/src/Atlas.Api/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_HTTP_PORTS: 8080
+      ConnectionStrings__Default: >-
+        Host=postgres;Port=5432;Database=${POSTGRES_DB:-atlas};Username=${POSTGRES_USER:-atlas};Password=${POSTGRES_PASSWORD:-local-dev-only}
+      Auth__Enabled: "false"
+      OTEL_SERVICE_NAME: atlas-api
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+    ports:
+      - "8080:8080"
+    depends_on:
+      db-migrator:
+        condition: service_completed_successfully
+      otel-collector:
+        condition: service_started
+
+  node-worker:
+    build:
+      context: ../../services/node-worker
+    environment:
+      ENVIRONMENT: development
+      NODE_WORKER_PORT: 8081
+      OTEL_SERVICE_NAME: atlas-node-worker
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+    ports:
+      - "8081:8081"
+    depends_on:
+      otel-collector:
+        condition: service_started
+
+  python-worker:
+    build:
+      context: ../../services/python-worker
+    environment:
+      ENVIRONMENT: development
+      PYTHON_WORKER_PORT: 8082
+      OTEL_SERVICE_NAME: atlas-python-worker
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+    ports:
+      - "8082:8082"
+    depends_on:
+      otel-collector:
+        condition: service_started
+
+volumes:
+  postgres-data:

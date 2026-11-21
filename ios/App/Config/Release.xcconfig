@@ -1,0 +1,11 @@
+#include "Base.xcconfig"
+
+PRODUCT_BUNDLE_IDENTIFIER = com.atlas.app
+PRODUCT_NAME = Atlas
+
+ATLAS_ENVIRONMENT = production
+ATLAS_API_BASE_URL = https:/$()/api.example.com/api/v1
+
+SWIFT_OPTIMIZATION_LEVEL = -O
+SWIFT_COMPILATION_MODE = wholemodule
+VALIDATE_PRODUCT = YES

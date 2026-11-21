@@ -1,0 +1,27 @@
+# SwiftFormat configuration. Formatting is mechanical and settled here, so it
+# never has to be discussed in a pull request.
+
+--swiftversion 6.0
+
+--indent 4
+--maxwidth 120
+--wraparguments before-first
+--wrapparameters before-first
+--wrapcollections preserve
+--closingparen balanced
+--trimwhitespace always
+--commas always
+--semicolons never
+--importgrouping testable-bottom
+--self remove
+--stripunusedargs closure-only
+--emptybraces no-space
+--ifdef no-indent
+
+--exclude Packages/AtlasKit/.build,DerivedData
+
+# Two default rules are turned off on purpose. Both would expand concise,
+# idiomatic Swift (`var now: Date { Date() }`, `func reset() { state.reset() }`)
+# into three lines each, which makes small protocol conformances and test stubs
+# noticeably harder to scan without making anything clearer.
+--disable wrapFunctionBodies,wrapPropertyBodies

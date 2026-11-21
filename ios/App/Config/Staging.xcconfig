@@ -1,0 +1,10 @@
+#include "Base.xcconfig"
+
+PRODUCT_BUNDLE_IDENTIFIER = com.atlas.app.staging
+PRODUCT_NAME = Atlas Staging
+
+ATLAS_ENVIRONMENT = staging
+ATLAS_API_BASE_URL = https:/$()/api.staging.example.com/api/v1
+
+SWIFT_ACTIVE_COMPILATION_CONDITIONS = STAGING
+SWIFT_OPTIMIZATION_LEVEL = -O

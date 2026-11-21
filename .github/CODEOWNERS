@@ -1,0 +1,11 @@
+# Code ownership drives review requests automatically.
+#
+# This is a personal account, so ownership is a single user. Team syntax
+# (@org/team) only works inside an organisation; if this repository moves to
+# one, switch to per-area teams, e.g.:
+#
+#   /backend/   @org/backend
+#   /ios/       @org/mobile
+#   /infra/     @org/platform
+
+* @valodyadev

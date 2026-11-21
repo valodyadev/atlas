@@ -1,0 +1,102 @@
+name: Backend
+
+# Path-filtered: an iOS-only change must not queue a 5-minute backend run.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - '.config/dotnet-tools.json'
+      - '.github/workflows/backend.yml'
+  pull_request:
+    paths:
+      - 'backend/**'
+      - '.config/dotnet-tools.json'
+      - '.github/workflows/backend.yml'
+
+# Superseded runs are wasted minutes and a confusing status list.
+concurrency:
+  group: backend-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v5
+
+      # The SDK version comes from backend/global.json, so CI and laptops
+      # cannot drift apart.
+      - uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: backend/global.json
+          cache: true
+          cache-dependency-path: backend/**/packages.lock.json
+
+      - name: Restore
+        # --locked-mode: fail rather than silently resolve a different
+        # dependency graph than the one committed in packages.lock.json.
+        run: dotnet restore --locked-mode
+
+      - name: Verify formatting
+        # Fails on any style or analyzer violation, so review never has to
+        # discuss formatting.
+        run: dotnet format --verify-no-changes --no-restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      # Ubuntu runners have Docker, so the Testcontainers-backed integration
+      # tests really run here. They skip themselves on a developer machine
+      # without a container runtime - this job is where that coverage is
+      # guaranteed.
+      - name: Test
+        run: dotnet test --configuration Release --no-build
+
+      - name: Publish API
+        run: dotnet publish src/Atlas.Api --configuration Release --no-build --output ../artifacts/api
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-test-results
+          path: backend/artifacts/**/*.trx
+          if-no-files-found: ignore
+          retention-days: 7
+
+  # Fails the build if the committed OpenAPI contract no longer matches the
+  # code. The iOS client is generated from that contract, so an unnoticed
+  # breaking change here becomes a broken App Store release later.
+  openapi-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: backend/global.json
+
+      - name: Export the OpenAPI document
+        run: ./tools/scripts/export-openapi.sh
+
+      - name: Fail if the contract drifted
+        run: |
+          if ! git diff --exit-code --stat -- contracts/openapi; then
+            echo "::error::The OpenAPI contract changed. Review the diff, then commit contracts/openapi/."
+            git diff -- contracts/openapi
+            exit 1
+          fi

@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <!-- The HTTP host. This is a composition root and nothing else: it owns no
+       domain logic, only the list of modules it loads and the transport
+       concerns (versioning, auth, rate limits, OpenAPI) that apply to all of
+       them. Keeping it thin is what allows a module to be hosted elsewhere. -->
+
+  <PropertyGroup>
+    <RootNamespace>Atlas.Api</RootNamespace>
+    <UserSecretsId>atlas-api-5f1c0f3e-0c1a-4a1f-9c9a-2b6d1f7a4c10</UserSecretsId>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Atlas.ServiceDefaults/Atlas.ServiceDefaults.csproj" />
+    <ProjectReference Include="../Atlas.SharedKernel/Atlas.SharedKernel.csproj" />
+    <ProjectReference Include="../Modules/Atlas.Modules.Identity/Atlas.Modules.Identity.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+    <PackageReference Include="Scalar.AspNetCore" />
+    <PackageReference Include="Asp.Versioning.Http" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Atlas.Api.IntegrationTests" />
+  </ItemGroup>
+
+</Project>

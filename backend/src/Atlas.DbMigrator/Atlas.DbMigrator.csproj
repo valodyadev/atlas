@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Applies database migrations as a standalone job, never as a side effect
+       of starting the API. See docs/runbooks/database-migrations.md for why. -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Atlas.DbMigrator</RootNamespace>
+    <UserSecretsId>atlas-dbmigrator-7a2e9d41-5b3c-4f0a-9d8e-1c4b7a2f6e30</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Modules/Atlas.Modules.Identity/Atlas.Modules.Identity.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="EFCore.NamingConventions" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,18 @@
+* text=auto eol=lf
+
+# Keep Xcode/pbxproj merges sane if a project file is ever committed.
+*.pbxproj          merge=union linguist-generated=true
+*.xcworkspacedata  merge=union
+
+# Treat lockfiles as generated so they do not pollute diffs/reviews.
+package-lock.json  linguist-generated=true
+packages.lock.json linguist-generated=true
+yarn.lock          linguist-generated=true
+uv.lock            linguist-generated=true
+Package.resolved   linguist-generated=true
+
+# Binary assets
+*.png  binary
+*.jpg  binary
+*.pdf  binary
+*.ipa  binary
