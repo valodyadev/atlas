@@ -88,6 +88,11 @@ custom_rules:
     severity: error
   no_userdefaults_for_tokens:
     name: "No credentials in UserDefaults"
-    regex: 'UserDefaults.*(token|password|secret|apiKey)'
+    # Anchored on an actual accessor call rather than just the two words
+    # appearing on one line. The looser form matched the doc comment in
+    # KeychainTokenStore that explains why we do NOT put tokens in
+    # UserDefaults, which would have failed `--strict` on prose.
+    # (?i) so accessToken / apiKey are caught too.
+    regex: '(?i)userdefaults[^\n]{0,80}\.(set|setvalue|string|object|value|data)\([^\n)]{0,80}(token|password|secret|apikey|credential)'
     message: "Credentials belong in the Keychain; UserDefaults ends up in backups."
     severity: error

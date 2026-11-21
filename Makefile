@@ -139,7 +139,7 @@ lint: ## Run every linter and formatting check (does not modify files)
 	cd $(BACKEND) && dotnet format --verify-no-changes
 	cd ios && swiftformat --lint .
 	@command -v swiftlint >/dev/null 2>&1 && (cd ios && swiftlint lint --strict) \
-		|| echo "  skipping swiftlint (needs a full Xcode install)"
+		|| echo "  skipping swiftlint (not on PATH - brew fails on macOS 27; use the portable_swiftlint.zip release)"
 	cd services/node-worker && npm run lint && npm run typecheck && npm run format:check
 	cd services/python-worker && uv run ruff check . && uv run ruff format --check . && uv run mypy
 

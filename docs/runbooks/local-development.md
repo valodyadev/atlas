@@ -78,7 +78,33 @@ skipped Atlas.Api.IntegrationTests.UserEndpointTests...
 ```
 
 CI always has a runtime, so that coverage is never silently lost. To run them
-locally, install Docker Desktop, Colima or OrbStack and re-run.
+locally, install any one of Docker Desktop, Colima, OrbStack or Podman and
+re-run — no further configuration:
+
+```bash
+brew install colima docker && colima start
+make test-backend      # 35 tests, 0 skipped
+```
+
+With all four you get 35 passing tests and nothing skipped. If you want
+`docker compose` (for `make up`) alongside Colima, also
+`brew install docker-compose` and symlink it into `~/.docker/cli-plugins/`,
+which Homebrew's caveat explains — the `docker` formula is only the CLI.
+
+#### If you see "invalid mount config for type bind"
+
+You should not, because the test harness handles it, but for the record:
+Testcontainers bind-mounts the Docker socket into its Ryuk reaper container.
+On every VM-backed runtime (Colima, OrbStack, Podman, Docker Desktop) the
+client talks to a socket under your home directory while the daemon runs
+inside the VM and cannot stat a macOS host path, so container creation fails
+with `operation not supported` — and since it happens in the collection
+fixture, all ten tests fail with that one message.
+
+`ContainerRuntime.ConfigureSocketMount()` sets
+`TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock` (the daemon's own
+path inside the VM) when it detects a non-standard socket and you have not set
+the variable yourself. To override it, export it before running the tests.
 
 ## Database
 
@@ -133,8 +159,20 @@ startup on purpose. `cp .env.example .env`, or export
 deliberate. Only `Development` may run without authentication; any other
 environment fails fast rather than serving unauthenticated traffic.
 
-**`xcodebuild requires Xcode`** — only the Command Line Tools are installed.
-The Swift packages still build and test; the app target needs full Xcode.
+**`xcodebuild requires Xcode`** — only the Command Line Tools are active. The
+Swift packages still build and test; the app target needs full Xcode. Point at
+it with Xcode > Settings > Locations > Command Line Tools, which uses the macOS
+auth dialog, rather than `sudo xcode-select -s` (which echoes nothing as you
+type the password).
+
+**No simulators listed** — Xcode 27 downloads simulator runtimes separately.
+`xcrun simctl list runtimes` shows an empty list until you install one from
+Xcode > Settings > Components.
+
+**`brew install swiftlint` fails with `unknown or unsupported macOS version`** —
+Homebrew treats macOS 27 as a pre-release Tier 2 configuration. Download the
+official `portable_swiftlint.zip` from the SwiftLint releases and run the
+binary directly.
 
 **Traces are not appearing in Jaeger** — the exporter is only attached when
 `OTEL_EXPORTER_OTLP_ENDPOINT` is set. Check it points at

@@ -24,7 +24,7 @@ jobs:
   # almost all of the iOS test coverage lives, and it finishes in under two
   # minutes.
   packages:
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 20
     defaults:
       run:
@@ -34,7 +34,10 @@ jobs:
       - uses: actions/checkout@v5
 
       - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode_16.4.app
+        run: |
+          sudo xcode-select -s /Applications/Xcode_26.6.app
+          xcodebuild -version
+          swift --version
 
       - uses: actions/cache@v4
         with:
@@ -51,7 +54,7 @@ jobs:
         run: swift test -Xswiftc -warnings-as-errors
 
   lint:
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 15
     defaults:
       run:
@@ -59,6 +62,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v5
+
+      - name: Select Xcode
+        # SwiftLint loads sourcekitd from the active developer directory, so
+        # pin the same Xcode the other two jobs use.
+        run: sudo xcode-select -s /Applications/Xcode_26.6.app
 
       - name: Install tools
         run: brew install swiftformat swiftlint xcodegen
@@ -73,7 +81,7 @@ jobs:
   # simulator. Catches anything that only breaks inside a real app target -
   # Info.plist substitution, asset catalogs, build settings.
   app:
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 40
     defaults:
       run:
@@ -83,7 +91,10 @@ jobs:
       - uses: actions/checkout@v5
 
       - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode_16.4.app
+        run: |
+          sudo xcode-select -s /Applications/Xcode_26.6.app
+          xcodebuild -version
+          swift --version
 
       - name: Install XcodeGen
         run: brew install xcodegen
@@ -102,6 +113,6 @@ jobs:
             -project Atlas.xcodeproj \
             -scheme Atlas \
             -configuration Debug \
-            -destination 'platform=iOS Simulator,name=iPhone 16,OS=latest' \
+            -destination 'platform=iOS Simulator,name=iPhone 17,OS=latest' \
             CODE_SIGNING_ALLOWED=NO \
             | xcbeautify --renderer github-actions

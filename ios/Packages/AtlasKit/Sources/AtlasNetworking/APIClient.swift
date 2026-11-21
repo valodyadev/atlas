@@ -138,7 +138,7 @@ public actor URLSessionAPIClient: APIClient {
         }
 
         AtlasLog.networking.debug(
-            "\(endpoint.method.rawValue, privacy: .public) \(endpoint.path, privacy: .public) -> \(http.statusCode, privacy: .public)"
+            "\(endpoint.method.rawValue, privacy: .public) \(endpoint.path, privacy: .public) -> \(http.statusCode)"
         )
 
         switch http.statusCode {
