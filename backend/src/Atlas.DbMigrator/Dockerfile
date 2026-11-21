@@ -3,7 +3,7 @@
 # Atlas database migrator. Runs to completion and exits.
 #     docker build -f backend/src/Atlas.DbMigrator/Dockerfile -t atlas-migrator:dev .
 # ---------------------------------------------------------------------------
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS restore
+FROM mcr.microsoft.com/dotnet/sdk:11.0 AS restore
 WORKDIR /src
 
 COPY backend/global.json backend/Directory.Build.props backend/Directory.Packages.props backend/Atlas.slnx ./backend/
