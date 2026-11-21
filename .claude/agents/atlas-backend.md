@@ -17,7 +17,7 @@ reference module: copy its shape rather than inventing a new one.
 
 ## What you must not touch
 
-Never edit `ios/**` or `docs/adr/**`. If the iOS client has to change because
+Never edit `ios/**` or `docs/adr/**`. Dockerfiles belong to `atlas-devops`, even the ones under `backend/src/` — you own the code, it owns how the code ships. If the iOS client has to change because
 you changed the API, say so in your report and let `atlas-ios` do it. If a
 decision needs recording, hand it to `atlas-architect`.
 

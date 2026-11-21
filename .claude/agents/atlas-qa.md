@@ -48,9 +48,10 @@ Report each gate as **pass**, **fail**, or **unverified** — and never fold
   skip when no container runtime is present, printing "No container runtime
   detected". If they skipped, say so and say the coverage was not exercised.
 - **SwiftLint** needs a full Xcode install for `sourcekitdInProc.framework`.
-  Xcode 27.2 is present, so it runs; `make lint` skips it only when Xcode is
-  absent. Install it from the official `portable_swiftlint.zip` — `brew install
-  swiftlint` fails on macOS 27.
+  Xcode 27.2 is present and the binary is installed at `~/.local/bin/swiftlint`,
+  so `make lint` runs it. It skips only when the binary is not on PATH — which
+  is what the skip message says. `brew install swiftlint` fails on macOS 27, so
+  it comes from the official `portable_swiftlint.zip`.
 - **The iOS simulator has no runtimes installed**, so the app target and any
   simulator test is unverified. The 38 package tests do not need it. `swiftlint rules` does work and validates the
   config without SourceKit.

@@ -31,8 +31,9 @@ Known unverifiable-locally cases, which must be reported as such:
 
 - The backend integration tests **skip** without a container runtime. A skip is
   not a pass. With Colima: `brew install colima docker && colima start`.
-- **SwiftLint** runs here (Xcode 27.2). `make lint` skips it only when Xcode is
-  absent. `brew install swiftlint` fails on macOS 27; use the portable release.
+- **SwiftLint** runs as part of `make lint` (Xcode 27.2, binary at
+  `~/.local/bin/swiftlint`). It skips only when the binary is not on PATH.
+  `brew install swiftlint` fails on macOS 27; use the portable release.
 - **The iOS simulator has no runtimes installed**, so app-target and simulator
   tests are unverified.
 - **GitHub Actions is blocked by an account billing lock**, so CI has never run

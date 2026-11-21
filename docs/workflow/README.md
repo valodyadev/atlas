@@ -16,6 +16,7 @@ in [`research-sources.md`](research-sources.md).
 | `atlas-backend` | Server implementation | `backend/**`, `services/**`, `contracts/**` | Read, Grep, Glob, Bash, Write, Edit |
 | `atlas-ios` | App implementation | `ios/**` | Read, Grep, Glob, Bash, Write, Edit |
 | `atlas-qa` | Test planning, verification, review | nothing | Read, Grep, Glob, Bash |
+| `atlas-devops` | Build, CI/CD, tooling | `.github/**`, `infra/**`, `Makefile`, `tools/**`, `.claude/**`, all Dockerfiles | Read, Grep, Glob, Bash, Write, Edit |
 
 `atlas-qa` has no `Write` and no `Edit`. That boundary is enforced by Claude
 Code, not by convention: a reviewer that can quietly fix what it finds hides

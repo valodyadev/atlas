@@ -8,6 +8,8 @@ paths:
 
 # Infrastructure rules
 
+Owned by `atlas-devops`.
+
 Loaded on demand when a Dockerfile, a compose or Kustomize file, a workflow or
 the Makefile is read or edited.
 

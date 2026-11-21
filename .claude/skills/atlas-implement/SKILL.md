@@ -13,7 +13,7 @@ argument-hint: [the task, ideally referencing an approved plan]
 | `backend/**`, `services/**`, `contracts/**` | **atlas-backend** |
 | `ios/**` | **atlas-ios** |
 | `docs/adr/**`, `docs/architecture.md` | **atlas-architect** |
-| `infra/**`, `.github/**`, `Makefile` | whoever owns the change; say which |
+| `.github/**`, `infra/**`, `Makefile`, `tools/**`, `.claude/**`, any `Dockerfile` | **atlas-devops** |
 
 One owner per path, always. If a task needs both sides, split it into two
 briefs rather than letting one agent reach across.

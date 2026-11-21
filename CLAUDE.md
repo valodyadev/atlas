@@ -60,10 +60,15 @@ split exists to prevent.
 
 | Paths | Owner |
 | --- | --- |
-| `backend/**`, `services/**`, `contracts/**` | `atlas-backend` |
-| `ios/**` | `atlas-ios` |
+| `backend/**`, `services/**`, `contracts/**` — except Dockerfiles | `atlas-backend` |
+| `ios/**` — except `.github/` and the Makefile | `atlas-ios` |
 | `docs/adr/**`, `docs/architecture.md` | `atlas-architect` |
+| `.github/**`, `infra/**`, `Makefile`, `tools/**`, `.claude/**`, and **every** `Dockerfile` | `atlas-devops` |
 | `docs/workflow/**` | whoever runs `/atlas-handoff` |
+
+The Dockerfile carve-out is the one place two agents' territories overlap:
+they live under `backend/src/`, but `atlas-devops` owns them. The backend agent
+owns the application code; DevOps owns how it is containerised and shipped.
 
 `atlas-qa` owns no code: it has no `Write` or `Edit` tool and reports findings
 for the owning agent to apply.
