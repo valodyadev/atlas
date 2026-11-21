@@ -1,5 +1,6 @@
 using Atlas.DbMigrator;
 using Atlas.Modules.Identity;
+using Atlas.ServiceDefaults;
 using Atlas.ServiceDefaults.Modularity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -21,6 +22,11 @@ using Microsoft.Extensions.Logging;
 
 var builder = Host.CreateApplicationBuilder(args);
 builder.Configuration.AddEnvironmentVariables(prefix: "ATLAS_");
+
+// Same baseline as the API. Modules are entitled to assume these services
+// exist, and a migration is exactly the kind of deploy step whose traces and
+// duration you want in the same telemetry backend as everything else.
+builder.AddServiceDefaults();
 
 // Reusing the module's own ConfigureServices means the migrator can never
 // disagree with the API about how a DbContext is configured.

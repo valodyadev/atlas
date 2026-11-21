@@ -3,6 +3,7 @@ using Atlas.ServiceDefaults.Observability;
 using Atlas.SharedKernel.Time;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 
 namespace Atlas.ServiceDefaults;
@@ -30,8 +31,8 @@ public static class ServiceDefaultsExtensions
         builder.AddObservability();
         builder.AddDefaultHealthChecks();
 
-        builder.Services.AddSingleton(TimeProvider.System);
-        builder.Services.AddSingleton<IClock, SystemClock>();
+        builder.Services.TryAddSingleton(TimeProvider.System);
+        builder.Services.TryAddSingleton<IClock, SystemClock>();
 
         // Every HttpClient in the process gets retries, a circuit breaker and
         // timeouts by default. Opting out has to be deliberate.

@@ -1,0 +1,59 @@
+# ---------------------------------------------------------------------------
+# Build-context exclusions for images built from the repository root
+# (the .NET images). Each service with its own build context has its own
+# .dockerignore next to its Dockerfile.
+#
+# This file is load-bearing, not an optimisation. The .NET Dockerfiles restore
+# in an early stage and then `COPY backend/ ./backend/` before publishing with
+# --no-restore. Without the artifacts/obj exclusions below, that COPY drops the
+# HOST's restore output on top of the container's, and the publish fails with
+#
+#   error NETSDK1064: Package Asp.Versioning.Abstractions, version 10.2.1 was
+#   not found. It might have been deleted since NuGet restore.
+#
+# because the host's project.assets.json points at packages that only exist in
+# the host's ~/.nuget/packages.
+# ---------------------------------------------------------------------------
+
+# --- Version control and CI ---
+.git
+.gitignore
+.gitattributes
+.github
+
+# --- Secrets: never let these into a build context or an image layer -------
+.env
+.env.*
+!.env.example
+**/appsettings.Local.json
+**/appsettings.*.Local.json
+**/*.pem
+**/*.p12
+**/*.mobileprovision
+secrets/
+
+# --- .NET build and restore output (see the note above) --------------------
+**/artifacts/
+**/obj/
+**/bin/
+**/TestResults/
+**/*.user
+
+# --- Other ecosystems' build output and dependencies ----------------------
+**/node_modules/
+**/dist/
+**/.venv/
+**/__pycache__/
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+**/.build/
+**/.swiftpm/
+**/DerivedData/
+**/*.xcodeproj/
+
+# --- Noise ----------------------------------------------------------------
+**/.DS_Store
+**/*.log
+.vscode/
+.idea/

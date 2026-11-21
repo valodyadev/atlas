@@ -19,7 +19,17 @@ ARG VERSION=0.1.0
 RUN dotnet publish backend/src/Atlas.DbMigrator/Atlas.DbMigrator.csproj \
       --configuration Release --no-restore --output /app/publish -p:Version=${VERSION}
 
-FROM mcr.microsoft.com/dotnet/runtime:10.0-noble-chiseled AS final
+# aspnet, not runtime, even though this is a console app that serves no HTTP.
+# Atlas.DbMigrator -> Atlas.Modules.Identity -> Atlas.ServiceDefaults, and
+# ServiceDefaults carries <FrameworkReference Include="Microsoft.AspNetCore.App" />
+# for the module contract and health-check types. A FrameworkReference
+# propagates transitively, so the published app requires the ASP.NET Core
+# shared framework; on the plain runtime image it exits 150 with
+# "No frameworks were found". That reuse is deliberate - it is what stops the
+# migrator and the API disagreeing about how a DbContext is configured - so
+# the ~10 MB larger base image is the right trade rather than splitting
+# ServiceDefaults in two.
+FROM mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 USER $APP_UID

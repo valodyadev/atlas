@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Routing;
+using Atlas.SharedKernel.Time;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 
 namespace Atlas.ServiceDefaults.Modularity;
@@ -19,6 +21,17 @@ public static class ModuleHostingExtensions
     {
         ArgumentNullException.ThrowIfNull(builder);
         ArgumentNullException.ThrowIfNull(modules);
+
+        // The baseline a module may rely on without the host having to
+        // remember. AddServiceDefaults registers these too; TryAdd keeps the
+        // two paths from fighting and makes the order irrelevant.
+        //
+        // This exists because the DbMigrator did NOT call AddServiceDefaults
+        // and crashed at startup resolving IClock for the Identity module's
+        // UserService. A host that forgets the baseline should not be able to
+        // break a module.
+        builder.Services.TryAddSingleton(TimeProvider.System);
+        builder.Services.TryAddSingleton<IClock, SystemClock>();
 
         var registry = new ModuleRegistry();
 

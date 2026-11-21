@@ -32,6 +32,9 @@ public sealed class PostgresFixture : IAsyncLifetime
             return;
         }
 
+        // Must happen before the first container starts; see the method's remarks.
+        ContainerRuntime.ConfigureSocketMount();
+
         _container = new PostgreSqlBuilder(PostgresImage)
             .WithDatabase("atlas")
             .WithUsername("atlas")
