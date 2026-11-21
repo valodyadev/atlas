@@ -4,7 +4,7 @@
 #     docker build -t atlas-node-worker:dev services/node-worker
 # ---------------------------------------------------------------------------
 
-FROM node:22-bookworm-slim AS deps
+FROM node:26-bookworm-slim AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 # `npm ci` installs exactly the lockfile - never a resolved-at-build-time tree.
@@ -15,7 +15,7 @@ COPY tsconfig.json ./
 COPY src ./src
 RUN npm run build
 
-FROM node:22-bookworm-slim AS final
+FROM node:26-bookworm-slim AS final
 WORKDIR /app
 ENV NODE_ENV=production
 COPY package.json package-lock.json ./
