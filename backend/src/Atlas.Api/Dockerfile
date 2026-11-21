@@ -10,7 +10,7 @@
 # --- Stage 1: restore -------------------------------------------------------
 # Project files are copied before the source so that an edit to a .cs file
 # does not invalidate the (slow) restore layer.
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS restore
+FROM mcr.microsoft.com/dotnet/sdk:11.0 AS restore
 WORKDIR /src
 
 COPY backend/global.json backend/Directory.Build.props backend/Directory.Packages.props backend/Atlas.slnx ./backend/
