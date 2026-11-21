@@ -88,7 +88,13 @@ services:
       ASPNETCORE_HTTP_PORTS: 8080
       ConnectionStrings__Default: >-
         Host=postgres;Port=5432;Database=${POSTGRES_DB:-atlas};Username=${POSTGRES_USER:-atlas};Password=${POSTGRES_PASSWORD:-local-dev-only}
-      Auth__Enabled: "false"
+      Auth__Enabled: "true"
+      # No default on purpose. A signing key committed to the repository is a
+      # committed secret, however local the stack claims to be. Compose fails
+      # with this message rather than starting with something guessable.
+      Identity__Auth__SigningKey: "${Identity__Auth__SigningKey:?set it in .env, generated with openssl rand -base64 48}"
+      Identity__Auth__Issuer: atlas
+      Identity__Auth__Audience: atlas-api
       OTEL_SERVICE_NAME: atlas-api
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
     ports:

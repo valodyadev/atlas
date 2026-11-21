@@ -21,7 +21,10 @@ endif
 export DOTNET_NOLOGO := true
 export DOTNET_CLI_TELEMETRY_OPTOUT := true
 
-COMPOSE := docker compose -f infra/docker/compose.yaml
+# --env-file is required, not optional: passing -f makes compose treat
+# infra/docker/ as the project directory, so it would look for .env there and
+# silently miss the one at the repository root.
+COMPOSE := docker compose --env-file .env -f infra/docker/compose.yaml
 BACKEND := backend
 IOS_PACKAGE := ios/Packages/AtlasKit
 

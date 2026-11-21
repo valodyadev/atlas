@@ -1,6 +1,7 @@
 using Atlas.Modules.Identity.Application;
 using Atlas.Modules.Identity.Contracts;
 using Atlas.Modules.Identity.Endpoints;
+using Atlas.Modules.Identity.Options;
 using Atlas.Modules.Identity.Infrastructure;
 using Atlas.ServiceDefaults.Diagnostics;
 using Atlas.ServiceDefaults.Modularity;
@@ -55,8 +56,33 @@ public sealed class IdentityModule : IApplicationModule
             options.EnableSensitiveDataLogging(builder.Environment.IsDevelopment());
         });
 
+        // Credential policy. The signing key is a secret with no default: the
+        // module refuses to start without one rather than silently signing
+        // tokens with something guessable.
+        var authOptions = builder.Configuration
+            .GetSection(IdentityAuthOptions.SectionName)
+            .Get<IdentityAuthOptions>() ?? new IdentityAuthOptions();
+
+        // Deliberately NOT validated here. Every host that loads this module
+        // would then need a signing key, including the migration job, which
+        // never issues a token — handing a secret to a process that has no use
+        // for it. Validation happens where it matters instead:
+        //
+        //   * the API host, at startup, in AddApiAuthentication;
+        //   * TokenService's constructor, if anything tries to mint a token.
+        //
+        // So the API still fails fast, and the migrator needs no secret.
+
+        builder.Services.AddSingleton(authOptions);
+        builder.Services.AddSingleton<IPasswordHasher, Argon2PasswordHasher>();
+        builder.Services.AddSingleton<ITokenService, TokenService>();
+
         builder.Services.AddScoped<UserService>();
-        builder.Services.AddScoped<IValidator<CreateUserRequest>, CreateUserRequestValidator>();
+        builder.Services.AddScoped<AuthService>();
+
+        builder.Services.AddScoped<IValidator<RegisterRequest>, RegisterRequestValidator>();
+        builder.Services.AddScoped<IValidator<LoginRequest>, LoginRequestValidator>();
+        builder.Services.AddScoped<IValidator<RefreshRequest>, RefreshRequestValidator>();
 
         builder.Services.AddHealthChecks()
             .AddCheck<IdentityDatabaseHealthCheck>(
@@ -68,6 +94,7 @@ public sealed class IdentityModule : IApplicationModule
     public void MapEndpoints(IEndpointRouteBuilder endpoints)
     {
         ArgumentNullException.ThrowIfNull(endpoints);
+        AuthEndpoints.Map(endpoints);
         UserEndpoints.Map(endpoints);
     }
 }

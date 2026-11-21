@@ -169,10 +169,18 @@ type the password).
 `xcrun simctl list runtimes` shows an empty list until you install one from
 Xcode > Settings > Components.
 
-**`brew install swiftlint` fails with `unknown or unsupported macOS version`** —
-Homebrew treats macOS 27 as a pre-release Tier 2 configuration. Download the
-official `portable_swiftlint.zip` from the SwiftLint releases and run the
-binary directly.
+**`make lint` says it is skipping swiftlint** — the binary is not on PATH.
+`brew install swiftlint` fails on macOS 27, which Homebrew treats as a
+pre-release Tier 2 configuration (`unknown or unsupported macOS version`), so
+install the official portable build instead:
+
+```bash
+curl -sL -o /tmp/sl.zip https://github.com/realm/SwiftLint/releases/latest/download/portable_swiftlint.zip \
+  && unzip -qo /tmp/sl.zip -d /tmp/sl && install -m 755 /tmp/sl/swiftlint ~/.local/bin/swiftlint
+```
+
+`~/.local/bin` is already on PATH. SwiftLint still needs a full Xcode install
+at runtime, because it loads `sourcekitd` from the active developer directory.
 
 **Traces are not appearing in Jaeger** — the exporter is only attached when
 `OTEL_EXPORTER_OTLP_ENDPOINT` is set. Check it points at

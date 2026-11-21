@@ -1,5 +1,6 @@
 import AtlasCore
 import AtlasDesignSystem
+import AtlasFeatureAuth
 import AtlasFeatureUsers
 import SwiftUI
 
@@ -12,10 +13,35 @@ struct AppRootView: View {
     let dependencies: AppDependencies
 
     var body: some View {
+        switch dependencies.authStore.state {
+        case .restoring:
+            // A brief, deliberate blank rather than flashing the sign-in
+            // screen at someone who is already signed in.
+            ProgressView("Signing you in…")
+                .task { await dependencies.authStore.restore() }
+
+        case .signedOut:
+            AuthView(store: dependencies.authStore)
+
+        case let .signedIn(user):
+            signedIn(user: user)
+        }
+    }
+
+    private func signedIn(user: CurrentUser) -> some View {
         TabView {
             Tab("Users", systemImage: "person.2") {
                 NavigationStack {
                     UsersListView(viewModel: dependencies.makeUsersListViewModel())
+                }
+            }
+
+            Tab("Account", systemImage: "person.crop.circle") {
+                NavigationStack {
+                    SignedInHeaderView(user: user) {
+                        await dependencies.authStore.signOut()
+                    }
+                    .navigationTitle("Account")
                 }
             }
 

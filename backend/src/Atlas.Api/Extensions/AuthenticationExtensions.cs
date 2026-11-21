@@ -2,10 +2,16 @@ using Atlas.Api.Options;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 namespace Atlas.Api.Extensions;
 
 /// <summary>Bearer-token authentication and secure-by-default authorization.</summary>
+/// <remarks>
+/// The Identity module issues the tokens; this host validates them. Both read
+/// the same <c>Identity:Auth</c> configuration section, so the signing key,
+/// issuer and audience cannot drift apart between minting and checking.
+/// </remarks>
 internal static class AuthenticationExtensions
 {
     internal static IHostApplicationBuilder AddApiAuthentication(this IHostApplicationBuilder builder)
@@ -34,20 +40,34 @@ internal static class AuthenticationExtensions
             return builder;
         }
 
+        var signingKey = builder.Configuration["Identity:Auth:SigningKey"];
+        if (string.IsNullOrWhiteSpace(signingKey))
+        {
+            throw new InvalidOperationException(
+                "Identity:Auth:SigningKey is required to validate access tokens. "
+                + "Generate one with: openssl rand -base64 48");
+        }
+
+        var issuer = builder.Configuration["Identity:Auth:Issuer"] ?? "atlas";
+        var audience = builder.Configuration["Identity:Auth:Audience"] ?? "atlas-api";
+
         builder.Services
             .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
             {
-                options.Authority = authOptions.Authority;
-                options.Audience = authOptions.Audience;
-                options.RequireHttpsMetadata = authOptions.RequireHttpsMetadata;
                 options.MapInboundClaims = false;
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuer = true,
+                    ValidIssuer = issuer,
                     ValidateAudience = true,
+                    ValidAudience = audience,
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(signingKey)),
+                    // Tight, because this system issues and validates its own
+                    // tokens on one clock. Generous skew just extends the life
+                    // of an expired token.
                     ClockSkew = TimeSpan.FromSeconds(30),
                 };
             });

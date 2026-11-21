@@ -12,10 +12,17 @@ public sealed class UserTests
 {
     private static readonly DateTimeOffset Now = new(2026, 1, 1, 12, 0, 0, TimeSpan.Zero);
 
+    /// <summary>
+    /// A stand-in hash. The aggregate never hashes anything itself - it is
+    /// handed an already-hashed password - so these tests do not need a real
+    /// Argon2 run, which costs 19 MiB and milliseconds apiece.
+    /// </summary>
+    private const string TestHash = "$argon2id$v=19$m=19456,t=2,p=1$c2FsdHNhbHRzYWx0c2E=$aGFzaGhhc2g=";
+
     [Fact]
     public void Register_normalises_email_and_trims_name()
     {
-        var result = User.Register("  Ada@Example.COM ", "  Ada Lovelace  ", Now);
+        var result = User.Register("  Ada@Example.COM ", "  Ada Lovelace  ", TestHash, Now);
 
         result.IsSuccess.ShouldBeTrue();
         result.Value.Email.ShouldBe("ada@example.com");
@@ -29,7 +36,7 @@ public sealed class UserTests
         // The primary key doubles as the keyset pagination cursor, which relies
         // on the UUIDv7 layout: a 48-bit big-endian Unix-millisecond prefix,
         // then the version nibble, then randomness.
-        var id = User.Register("ada@example.com", "Ada", Now).Value.Id;
+        var id = User.Register("ada@example.com", "Ada", TestHash, Now).Value.Id;
         var bytes = id.ToByteArray(bigEndian: true);
 
         (bytes[6] >> 4).ShouldBe(7);
@@ -53,9 +60,9 @@ public sealed class UserTests
         // Keyset pagination only needs a stable total order, so that is fine -
         // but it does mean same-millisecond rows are not guaranteed to come
         // back in creation order.
-        var earlier = User.Register("a@example.com", "A", Now).Value.Id.ToString();
+        var earlier = User.Register("a@example.com", "A", TestHash, Now).Value.Id.ToString();
         await Task.Delay(5, TestContext.Current.CancellationToken);
-        var later = User.Register("b@example.com", "B", Now).Value.Id.ToString();
+        var later = User.Register("b@example.com", "B", TestHash, Now).Value.Id.ToString();
 
         string.CompareOrdinal(later, earlier).ShouldBeGreaterThan(0);
     }
@@ -63,7 +70,7 @@ public sealed class UserTests
     [Fact]
     public void Register_raises_UserRegistered()
     {
-        var user = User.Register("ada@example.com", "Ada", Now).Value;
+        var user = User.Register("ada@example.com", "Ada", TestHash, Now).Value;
 
         var raised = user.DomainEvents.ShouldHaveSingleItem().ShouldBeOfType<UserRegistered>();
         raised.UserId.ShouldBe(user.Id);
@@ -79,7 +86,7 @@ public sealed class UserTests
     [InlineData("no-at-sign")]
     public void Register_rejects_invalid_email(string? email)
     {
-        var result = User.Register(email, "Ada", Now);
+        var result = User.Register(email, "Ada", TestHash, Now);
 
         result.IsFailure.ShouldBeTrue();
         result.Error.Code.ShouldBe("identity.user.email_invalid");
@@ -93,7 +100,7 @@ public sealed class UserTests
         // that would be silently truncated or blow up on insert.
         var tooLong = new string('a', User.EmailMaxLength) + "@example.com";
 
-        var result = User.Register(tooLong, "Ada", Now);
+        var result = User.Register(tooLong, "Ada", TestHash, Now);
 
         result.IsFailure.ShouldBeTrue();
         result.Error.Code.ShouldBe("identity.user.email_invalid");
@@ -105,7 +112,7 @@ public sealed class UserTests
     [InlineData("   ")]
     public void Register_rejects_blank_display_name(string? displayName)
     {
-        var result = User.Register("ada@example.com", displayName, Now);
+        var result = User.Register("ada@example.com", displayName, TestHash, Now);
 
         result.IsFailure.ShouldBeTrue();
         result.Error.Code.ShouldBe("identity.user.display_name_invalid");
@@ -114,7 +121,7 @@ public sealed class UserTests
     [Fact]
     public void Rename_updates_the_display_name()
     {
-        var user = User.Register("ada@example.com", "Ada", Now).Value;
+        var user = User.Register("ada@example.com", "Ada", TestHash, Now).Value;
 
         var result = user.Rename("  Ada King  ");
 
@@ -125,7 +132,7 @@ public sealed class UserTests
     [Fact]
     public void Rename_rejects_a_blank_name_and_leaves_the_aggregate_untouched()
     {
-        var user = User.Register("ada@example.com", "Ada", Now).Value;
+        var user = User.Register("ada@example.com", "Ada", TestHash, Now).Value;
 
         var result = user.Rename("   ");
 
@@ -136,7 +143,7 @@ public sealed class UserTests
     [Fact]
     public void ClearDomainEvents_empties_the_queue()
     {
-        var user = User.Register("ada@example.com", "Ada", Now).Value;
+        var user = User.Register("ada@example.com", "Ada", TestHash, Now).Value;
 
         user.ClearDomainEvents();
 

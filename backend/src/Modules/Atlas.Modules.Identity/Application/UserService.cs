@@ -2,7 +2,6 @@ using Atlas.Modules.Identity.Contracts;
 using Atlas.Modules.Identity.Domain;
 using Atlas.Modules.Identity.Infrastructure;
 using Atlas.SharedKernel.Primitives;
-using Atlas.SharedKernel.Time;
 using Microsoft.EntityFrameworkCore;
 
 namespace Atlas.Modules.Identity.Application;
@@ -16,55 +15,8 @@ namespace Atlas.Modules.Identity.Application;
 /// class grow - the module boundary stays the same either way.
 /// </remarks>
 /// <param name="dbContext">Module persistence.</param>
-/// <param name="clock">Time source.</param>
-public sealed class UserService(IdentityDbContext dbContext, IClock clock)
+public sealed class UserService(IdentityDbContext dbContext)
 {
-    /// <summary>Creates a user.</summary>
-    /// <param name="request">The requested user.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>The created user, or an error.</returns>
-    public async Task<Result<UserResponse>> CreateAsync(
-        CreateUserRequest request,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(request);
-
-        var registration = User.Register(request.Email, request.DisplayName, clock.UtcNow);
-        if (registration.IsFailure)
-        {
-            return registration.Error;
-        }
-
-        var user = registration.Value;
-
-        var emailTaken = await dbContext.Users
-            .AsNoTracking()
-            .AnyAsync(existing => existing.Email == user.Email, cancellationToken);
-
-        if (emailTaken)
-        {
-            return Error.Conflict("identity.user.email_taken", "That email address is already registered.");
-        }
-
-        dbContext.Users.Add(user);
-
-        try
-        {
-            await dbContext.SaveChangesAsync(cancellationToken);
-        }
-        catch (DbUpdateException)
-        {
-            // The pre-check above is a fast path for a good error message; the
-            // unique index is the real guarantee and can still fire under a
-            // concurrent insert.
-            return Error.Conflict("identity.user.email_taken", "That email address is already registered.");
-        }
-
-        user.ClearDomainEvents();
-
-        return ToResponse(user);
-    }
-
     /// <summary>Lists users, newest first, using keyset pagination.</summary>
     /// <param name="page">Page size and cursor.</param>
     /// <param name="cancellationToken">Cancellation token.</param>

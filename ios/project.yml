@@ -17,7 +17,7 @@ options:
   createIntermediateGroups: true
   developmentLanguage: en
   deploymentTarget:
-    iOS: "18.0"
+    iOS: "26.0"
   groupSortPosition: top
   generateEmptyDirectories: false
 
@@ -40,6 +40,12 @@ packages:
     path: Packages/AtlasKit
 
 targets:
+  # No SwiftLint build phase on purpose. Base.xcconfig sets
+  # ENABLE_USER_SCRIPT_SANDBOXING = YES, and a sandboxed build script cannot
+  # read .swiftlint.yml or the wider source tree - the build fails with
+  # "couldn't be opened because you don't have permission to view it".
+  # Keeping the sandbox is worth more than in-IDE lint warnings: linting is
+  # already enforced by `make lint` and by the ios.yml lint job.
   Atlas:
     type: application
     platform: iOS
@@ -47,14 +53,22 @@ targets:
       - path: App/Sources
       - path: App/Resources
         buildPhase: resources
+        # Info.plist must NOT also be a bundle resource. Xcode processes it
+        # separately via INFOPLIST_FILE, and having it in both places makes two
+        # build tasks write the same output:
+        #   error: Multiple commands produce '.../Atlas Dev.app/Info.plist'
+        excludes:
+          - "Info.plist"
     configFiles:
       Debug: App/Config/Debug.xcconfig
       Staging: App/Config/Staging.xcconfig
       Release: App/Config/Release.xcconfig
-    info:
-      path: App/Resources/Info.plist
     settings:
       base:
+        # Point at the committed plist rather than XcodeGen's `info:` block,
+        # which exists to GENERATE one. Ours is hand-written and version
+        # controlled, so generation would be a trap.
+        INFOPLIST_FILE: App/Resources/Info.plist
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         GENERATE_INFOPLIST_FILE: NO
@@ -67,18 +81,8 @@ targets:
         product: AtlasDesignSystem
       - package: AtlasKit
         product: AtlasFeatureUsers
-    preBuildScripts:
-      - name: SwiftLint
-        basedOnDependencyAnalysis: false
-        # Lint is advisory in the IDE and enforced in CI (`make ios-lint`), so a
-        # missing local install never blocks a build.
-        script: |
-          if command -v swiftlint >/dev/null 2>&1; then
-            swiftlint lint --quiet --config "$SRCROOT/.swiftlint.yml"
-          else
-            echo "warning: swiftlint not installed - run 'make bootstrap'"
-          fi
-
+      - package: AtlasKit
+        product: AtlasFeatureAuth
   AtlasUITests:
     type: bundle.ui-testing
     platform: iOS

@@ -17,7 +17,10 @@ internal static class UserEndpoints
     {
         var users = endpoints
             .MapGroup("/users")
-            .WithTags("Users");
+            .WithTags("Users")
+            // Reading the user list requires a signed-in caller. Creation now
+            // lives at /auth/register.
+            .RequireAuthorization();
 
         users.MapGet("/", async (
                 UserService service,
@@ -45,19 +48,5 @@ internal static class UserEndpoints
             .Produces<UserResponse>()
             .ProducesProblem(StatusCodes.Status404NotFound);
 
-        users.MapPost("/", async (
-                UserService service,
-                CreateUserRequest request,
-                CancellationToken cancellationToken) =>
-            {
-                var result = await service.CreateAsync(request, cancellationToken);
-                return result.ToHttpResult(user =>
-                    Results.CreatedAtRoute("GetUser", new { id = user.Id }, user));
-            })
-            .WithName("CreateUser")
-            .WithSummary("Register a new user.")
-            .WithRequestValidation<CreateUserRequest>()
-            .Produces<UserResponse>(StatusCodes.Status201Created)
-            .ProducesProblem(StatusCodes.Status409Conflict);
     }
 }

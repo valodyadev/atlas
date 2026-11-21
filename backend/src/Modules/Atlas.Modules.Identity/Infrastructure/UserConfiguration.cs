@@ -24,6 +24,20 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
             .HasMaxLength(User.DisplayNameMaxLength)
             .IsRequired();
 
+        builder.Property(user => user.PasswordHash)
+            .HasMaxLength(User.PasswordHashMaxLength)
+            .IsRequired();
+
+        builder.Property(user => user.SecurityStamp).IsRequired();
+
+        builder.Property(user => user.Role)
+            .HasMaxLength(64)
+            .HasDefaultValue(Roles.Member)
+            .IsRequired();
+
+        builder.Property(user => user.FailedLoginCount).IsRequired();
+        builder.Property(user => user.LockoutUntil);
+
         builder.Property(user => user.CreatedAt)
             .IsRequired();
 

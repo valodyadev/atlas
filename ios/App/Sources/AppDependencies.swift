@@ -1,4 +1,5 @@
 import AtlasCore
+import AtlasFeatureAuth
 import AtlasFeatureUsers
 import AtlasNetworking
 import Foundation
@@ -26,19 +27,54 @@ final class AppDependencies {
             ? OSLogTelemetry()
             : NoopTelemetry()
 
-        let tokenStore = KeychainTokenStore()
+        // Order matters. The refresh client is unauthenticated and never
+        // retries, so it can be built first and handed to the token store at
+        // construction — no window in which a refresh could fire before the
+        // handler exists, and no recursion if a refresh itself 401s.
+        let apiConfiguration = APIConfiguration(
+            baseURL: configuration.apiBaseURL,
+            environment: configuration.environment
+        )
+
+        let refreshClient = URLSessionAPIClient(
+            configuration: apiConfiguration,
+            tokenProvider: AnonymousTokenProvider(),
+            retryPolicy: .none,
+            telemetry: telemetry
+        )
+
+        let tokenStore = KeychainTokenStore(refreshHandler: { refreshToken in
+            let endpoint: Endpoint
+            do {
+                endpoint = try Endpoint.json(
+                    method: .post,
+                    path: "auth/refresh",
+                    body: ["refreshToken": refreshToken],
+                    requiresAuthentication: false
+                )
+            } catch {
+                return nil
+            }
+            return try? await refreshClient.send(endpoint, as: AuthTokens.self)
+        })
         self.tokenStore = tokenStore
 
         apiClient = URLSessionAPIClient(
-            configuration: APIConfiguration(
-                baseURL: configuration.apiBaseURL,
-                environment: configuration.environment
-            ),
+            configuration: apiConfiguration,
             tokenProvider: tokenStore,
             retryPolicy: RetryPolicy(),
             telemetry: telemetry
         )
+
+        authStore = AuthStore(
+            repository: LiveAuthRepository(client: apiClient),
+            credentialStore: tokenStore,
+            telemetry: telemetry
+        )
     }
+
+    /// The session. The root view switches on this.
+    let authStore: AuthStore
 
     // MARK: - Feature factories
 

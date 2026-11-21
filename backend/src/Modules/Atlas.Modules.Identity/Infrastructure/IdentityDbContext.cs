@@ -25,6 +25,9 @@ public sealed class IdentityDbContext(DbContextOptions<IdentityDbContext> option
     /// <summary>Registered users.</summary>
     public DbSet<User> Users => Set<User>();
 
+    /// <summary>Live and spent refresh tokens.</summary>
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
+
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

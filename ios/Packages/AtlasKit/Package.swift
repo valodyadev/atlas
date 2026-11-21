@@ -1,4 +1,4 @@
-// swift-tools-version:6.1
+// swift-tools-version:6.2
 import PackageDescription
 
 // ---------------------------------------------------------------------------
@@ -25,14 +25,15 @@ let strictConcurrency: [SwiftSetting] = [
 let package = Package(
     name: "AtlasKit",
     platforms: [
-        .iOS(.v18),
-        .macOS(.v14),
+        .iOS(.v26),
+        .macOS(.v26),
     ],
     products: [
         .library(name: "AtlasCore", targets: ["AtlasCore"]),
         .library(name: "AtlasNetworking", targets: ["AtlasNetworking"]),
         .library(name: "AtlasDesignSystem", targets: ["AtlasDesignSystem"]),
         .library(name: "AtlasFeatureUsers", targets: ["AtlasFeatureUsers"]),
+        .library(name: "AtlasFeatureAuth", targets: ["AtlasFeatureAuth"]),
     ],
     dependencies: [
         // Intentionally empty. See docs/adr/0007-ios-dependency-policy.md:
@@ -67,6 +68,11 @@ let package = Package(
             dependencies: ["AtlasCore", "AtlasNetworking", "AtlasDesignSystem"],
             swiftSettings: strictConcurrency
         ),
+        .target(
+            name: "AtlasFeatureAuth",
+            dependencies: ["AtlasCore", "AtlasNetworking", "AtlasDesignSystem"],
+            swiftSettings: strictConcurrency
+        ),
 
         // --- Tests ----------------------------------------------------------
         .testTarget(
@@ -82,6 +88,11 @@ let package = Package(
         .testTarget(
             name: "AtlasFeatureUsersTests",
             dependencies: ["AtlasFeatureUsers"],
+            swiftSettings: strictConcurrency
+        ),
+        .testTarget(
+            name: "AtlasFeatureAuthTests",
+            dependencies: ["AtlasFeatureAuth"],
             swiftSettings: strictConcurrency
         ),
     ]

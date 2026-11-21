@@ -14,6 +14,9 @@ the reasoning that led there is the most useful thing in the file.
 | [0006](0006-ios-swift-packages-and-generated-project.md) | iOS modularised as Swift packages, project generated | Accepted |
 | [0007](0007-ios-dependency-policy.md) | First-party iOS dependencies by default | Accepted |
 | [0008](0008-api-contract-sharing.md) | Committed OpenAPI contract, hand-written client for now | Accepted |
+| [0009](0009-argon2id-for-password-hashing.md) | Argon2id for password hashing | Accepted |
+| [0010](0010-single-role-with-policy-authorization.md) | One role per user, authorised through policies | Accepted |
+| [0011](0011-symmetric-signing-for-access-tokens.md) | Symmetric signing for access tokens, for now | Accepted |
 
 ## Writing one
 

@@ -42,6 +42,12 @@ public actor URLSessionAPIClient: APIClient {
             let sessionConfiguration = URLSessionConfiguration.default
             sessionConfiguration.timeoutIntervalForRequest = configuration.timeout
             sessionConfiguration.waitsForConnectivity = true
+            // Bounds the whole attempt, including the connectivity wait above.
+            // Without it, waitsForConnectivity falls back to the default
+            // resource timeout of seven days, so a request made while the
+            // server is unreachable leaves the UI spinning indefinitely
+            // instead of surfacing an error the person can act on.
+            sessionConfiguration.timeoutIntervalForResource = configuration.resourceTimeout
             // The API is the source of truth; a stale cached response is worse
             // than a visible loading state.
             sessionConfiguration.requestCachePolicy = .reloadIgnoringLocalCacheData
