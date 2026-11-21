@@ -4,7 +4,7 @@
 #     docker build -t atlas-python-worker:dev services/python-worker
 # ---------------------------------------------------------------------------
 
-FROM python:3.13-slim-bookworm AS build
+FROM python:3.15-slim-bookworm AS build
 COPY --from=ghcr.io/astral-sh/uv:0.13.9 /uv /usr/local/bin/uv
 WORKDIR /app
 
@@ -20,7 +20,7 @@ RUN uv sync --locked --no-install-project --no-dev
 COPY src ./src
 RUN uv sync --locked --no-dev
 
-FROM python:3.13-slim-bookworm AS final
+FROM python:3.15-slim-bookworm AS final
 WORKDIR /app
 
 ENV PATH="/app/.venv/bin:$PATH" \
