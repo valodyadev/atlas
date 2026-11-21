@@ -97,11 +97,11 @@ Installed by `make bootstrap` where possible; `make doctor` reports the rest.
 | Tool | Needed for | Install |
 | --- | --- | --- |
 | .NET 10 SDK | API, migrations, backend tests | `brew install dotnet@10` |
-| Docker / Colima / OrbStack | local stack, backend integration tests | Docker Desktop, or `brew install colima` |
+| Docker / Colima / OrbStack | local stack, backend integration tests | Docker Desktop, or `brew install colima docker docker-compose && colima start` |
 | Xcode 16.4+ | building the iOS **app**, simulator tests | App Store |
-| Swift 6.1 toolchain | the iOS **packages** (no Xcode needed) | Xcode or Command Line Tools |
+| Swift toolchain | the iOS **packages** (no Xcode needed) | Xcode or Command Line Tools |
 | XcodeGen | generating the Xcode project | `brew install xcodegen` |
-| SwiftFormat / SwiftLint | iOS formatting and linting | `brew install swiftformat swiftlint` |
+| SwiftFormat / SwiftLint | iOS formatting and linting | `brew install swiftformat`; SwiftLint from its `portable_swiftlint.zip` release |
 | Node 22 | the Node worker | `brew install node` |
 | uv | the Python worker | `brew install uv` |
 | kustomize | rendering Kubernetes manifests | `brew install kustomize` |
@@ -109,8 +109,11 @@ Installed by `make bootstrap` where possible; `make doctor` reports the rest.
 The Homebrew .NET formula is keg-only. `make` adds it to `PATH` for you; for
 your own shell, `export PATH="/opt/homebrew/opt/dotnet@10/bin:$PATH"`.
 
-SwiftLint requires a **full Xcode** install, so it is skipped by `make lint`
-when only the Command Line Tools are present.
+SwiftLint requires a **full Xcode** install (for `sourcekitdInProc.framework`),
+so `make lint` skips it when only the Command Line Tools are present. Note that
+`brew install swiftlint` fails on macOS 27, which Homebrew treats as a
+pre-release Tier 2 configuration — use the official `portable_swiftlint.zip`
+release instead.
 
 ## Git
 
@@ -189,4 +192,6 @@ Deliberate, and listed so you do not discover them at an inconvenient moment:
 | [Database migrations](docs/runbooks/database-migrations.md) | expand/contract, backfills, failure recovery |
 | [Secrets](docs/security/secrets.md) | where configuration lives, and what to do if one leaks |
 | [Adding a service](services/README.md) | the bar a new runtime has to clear |
+| [Agentic workflow](docs/workflow/README.md) | the four agents, the five stages, example prompts and limitations |
+| [Open items](docs/workflow/open-items.md) | live risks, open questions and deferred work |
 | [Contributing](CONTRIBUTING.md) | the workflow and what review looks for |
