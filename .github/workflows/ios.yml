@@ -31,7 +31,7 @@ jobs:
         working-directory: ios/Packages/AtlasKit
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Select Xcode
         run: |
@@ -39,7 +39,7 @@ jobs:
           xcodebuild -version
           swift --version
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: ios/Packages/AtlasKit/.build
           key: spm-${{ runner.os }}-${{ hashFiles('ios/Packages/AtlasKit/Package.swift') }}
@@ -61,7 +61,7 @@ jobs:
         working-directory: ios
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Select Xcode
         # SwiftLint loads sourcekitd from the active developer directory, so
@@ -88,7 +88,7 @@ jobs:
         working-directory: ios
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Select Xcode
         run: |
